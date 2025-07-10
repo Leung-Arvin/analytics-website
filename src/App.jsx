@@ -1,10 +1,25 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import reactLogo from './assets/react.svg'
 import viteLogo from '/vite.svg'
 import './App.css'
+import { loadPokemonData } from './utils/loadPokemonData'
 
 function App() {
   const [count, setCount] = useState(0)
+  const [pokemonData, setPokemonData] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const data = await loadPokemonData();
+      setPokemonData(data);
+      setIsLoading(false);
+    };
+    
+    fetchData();
+  }, []);
+
+  if (isLoading) return <div> <img src="Running-Pikachu-GIF.webp"/></div>;
 
   return (
     <>
@@ -18,7 +33,7 @@ function App() {
       </div>
       <h1>Vite + React</h1>
       <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
+        <button onClick={() => {console.log(pokemonData); setCount((count) => count + 1)}}>
           count is {count}
         </button>
         <p>
