@@ -1,0 +1,137 @@
+.sidebar {
+  width: 310px;
+  height: 100vh;
+  background: linear-gradient(135deg, #3a3a3a 0%, #1a1a1a 100%);
+  color: white;
+  position: fixed;
+  left: 0;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.3);
+  z-index: 1000;
+}
+
+.logo-container {
+  display: flex;
+  justify-content: center;
+  padding: 20px;
+  text-align: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.logo {
+  width: 60px;
+  height: 60px;
+  margin-bottom: 10px;
+  filter: drop-shadow(0 0 5px var(--clr-primary-a0));
+}
+
+.sidebar-nav ul {
+  list-style: none;
+  padding: 20px 0;
+}
+
+.sidebar-nav li {
+  margin: 5px 15px;
+  border-radius: 8px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.sidebar-nav li:hover {
+  background: var(--clr-primary-a0);
+}
+
+.sidebar-nav li.active {
+  background: var(--clr-surface-a20);
+  
+  border-left: 3px solid var(--clr-primary-a0);
+}
+
+.sidebar-nav a {
+  color: white;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  padding: 12px 20px;
+}
+
+.nav-icon {
+  font-size: 1.2rem;
+  margin-right: 15px;
+  width: 24px;
+  text-align: center;
+}
+
+.nav-label {
+  font-size: 0.95rem;
+}
+
+/* Language Selector Styles */
+.language-selector {
+  position: relative;
+  padding: 10px 15px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.language-selector:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.language-current {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.globe-icon {
+  width: 16px;
+  height: 16px;
+  opacity: 0.8;
+}
+
+.dropdown-arrow {
+  margin-left: auto;
+  font-size: 0.7rem;
+  transition: transform 0.2s;
+}
+
+.dropdown-arrow.open {
+  transform: rotate(180deg);
+}
+
+.language-dropdown {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  width: 100%;
+  background: #2a2a2a;
+  border-radius: 4px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  z-index: 10;
+  margin-bottom: 10px;
+}
+
+.language-option {
+  padding: 8px 15px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: background-color 0.2s;
+}
+
+.language-option:hover {
+  background-color: var(--clr-primary-a0);
+}
+
+.language-flag {
+  font-size: 1.2rem;
+}
+
+.sidebar-footer {
+  padding: 15px 0;
+  margin-top: auto;
+}

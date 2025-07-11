@@ -3,9 +3,13 @@ import reactLogo from './assets/react.svg'
 import viteLogo from '/vite.svg'
 import './App.css'
 import { loadPokemonData } from './utils/loadPokemonData'
+import PokemonProfilePage from './pages/PokemonProfilePage/PokemonProfilePage'
+import PokemonGridPage from './pages/PokemonBrowsePage.jsx/PokemonGridPage'
+import Sidebar from './components/Sidebar/Sidebar'
+import { Outlet } from 'react-router'
+import { PokemonDataProvider } from './contexts/PokemonDataContext'
 
 function App() {
-  const [count, setCount] = useState(0)
   const [pokemonData, setPokemonData] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -23,26 +27,14 @@ function App() {
 
   return (
     <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
+      <PokemonDataProvider pokemonData={pokemonData}>
+      <div className='app-container'>
+      <Sidebar />
       </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => {console.log(pokemonData); setCount((count) => count + 1)}}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
+      <div className='main-container'>
+        <Outlet/>
       </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
+      </PokemonDataProvider>
     </>
   )
 }
