@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useContext } from "react";
 import { Bar, Radar, Pie } from "react-chartjs-2";
 import { Chart as ChartJS, registerables } from "chart.js";
-import "./TeamBuilder.css";
+import "./Teambuilder.css";
 import { PokemonDataContext } from "../../contexts/PokemonDataContext";
 import { IoMdCloseCircle, IoMdCloseCircleOutline } from "react-icons/io";
 import { typeColors } from "../../utils/pokemonColors";
