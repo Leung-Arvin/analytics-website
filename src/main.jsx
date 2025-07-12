@@ -18,7 +18,7 @@ const router = createBrowserRouter([
     element: <App />,
     children: [
       {
-        index: true,  // This makes it the default route
+        index: true, 
         element: <Navigate to="/team-builder" replace />,
       },
       {
