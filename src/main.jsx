@@ -1,7 +1,7 @@
 // main.jsx
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { createBrowserRouter, RouterProvider } from 'react-router-dom';
+import { createBrowserRouter, Navigate, RouterProvider } from 'react-router-dom';
 // import AnalyticsPage from './pages/Analytics';
 // import PokedexPage from './pages/Pokedex';
 import './index.css';
@@ -14,9 +14,13 @@ import TeamBuilder from './pages/PokemonTeamBuilder.jsx/TeamBuilder';
 
 const router = createBrowserRouter([
   {
-    path: '/team-builder',
+    path: '/',
     element: <App />,
     children: [
+      {
+        index: true,  // This makes it the default route
+        element: <Navigate to="/team-builder" replace />,
+      },
       {
         path: 'team-builder',
         element: <TeamBuilder />,
