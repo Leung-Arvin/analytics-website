@@ -7,6 +7,7 @@ import { IoMdCloseCircleOutline } from "react-icons/io";
 import { typeColors } from "../../utils/pokemonColors";
 import { HelpButton } from "../../components/HelpButton/HelpButton";
 import { FaExpandAlt } from "react-icons/fa";
+import { fetchAbilityDescription } from "../../utils/pokeAPIHelpers";
 
 ChartJS.register(...registerables);
 
@@ -19,6 +20,7 @@ const TeamBuilder = () => {
   const [sprites, setSprites] = useState({});
   const [activeTab, setActiveTab] = useState("coverage");
   const [expandedGraph, setExpandedGraph] = useState(null);
+  const [abilityInfo, setAbilityInfo] = useState({});
 
   useEffect(() => {
     if (searchQuery.trim() == "") {
@@ -54,6 +56,7 @@ const TeamBuilder = () => {
 
     try {
       // Check if sprite is already cached
+      
       if (!sprites[pokemon.pokedex_number]) {
         const response = await fetch(
           `https://pokeapi.co/api/v2/pokemon/${pokemon.name.toLowerCase()}`
@@ -424,7 +427,7 @@ const TeamBuilder = () => {
         },
         ticks: {
           color: "white",
-          callback: (val) => (val % 50 === 0 ? val : ""),
+          callback: (val) => (val % 10 === 0 ? val : ""),
         },
       },
     },
@@ -474,6 +477,7 @@ const TeamBuilder = () => {
           {team.length === 0 ? (
             <div className="empty-team-prompt">
               <p>Your team is empty</p>
+              <img src="/empty_pokeball.png"/>
               <small>Search and add Pokémon to get started</small>
             </div>
           ) : (
@@ -495,9 +499,9 @@ const TeamBuilder = () => {
                         src={sprites[team[i].pokedex_number]}
                         alt={team[i].name}
                       />
-                      <span>
-                        #{team[i].pokedex_number} {team[i].name}
-                      </span>
+                       <div className="pokemon-info">
+              <span>#{team[i].pokedex_number} {team[i].name}</span>
+            </div>
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
@@ -510,8 +514,11 @@ const TeamBuilder = () => {
                   ) : (
                     <div className="empty-slot">Slot {i + 1}</div>
                   )}
+                  
                 </div>
+                
               ))
+              
           )}
         </div>
       </div>
@@ -811,7 +818,7 @@ const TeamBuilder = () => {
                     },
                     ticks: {
                       color: "white",
-                      callback: (val) => (val % 50 === 0 ? val : ""),
+                      callback: (val) => (val % 10 === 0 ? val : ""),
                     },
                   },
                 },

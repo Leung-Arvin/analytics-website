@@ -17,6 +17,7 @@ import {
 import { PokemonDataContext } from '../../contexts/PokemonDataContext';
 import { useLocation } from 'react-router';
 import  TypeBadge from '../../components/TypeBadge/TypeBadge'
+import { fetchAbilityDescription } from '../../utils/pokeAPIHelpers';
 
 // Register ChartJS components
 ChartJS.register(
@@ -37,7 +38,23 @@ ChartJS.register(
 const PokemonProfilePage = () => {
   let location = useLocation();
   let pokemon = useContext(PokemonDataContext)[location.pathname.split("/").pop() - 1];
+  const [abilityDescriptions, setAbilityDescriptions] = useState({});
 
+  useEffect(() => {
+    const fetchAbilities = async () => {
+      const abilities = JSON.parse(pokemon.abilities.replace(/'/g, '"'));
+      const descriptions = {};
+      
+      for (const ability of abilities) {
+        let ability_name = ability.replace(" ", "-");
+        descriptions[ability] = await fetchAbilityDescription(ability_name.toLowerCase());
+      }
+      
+      setAbilityDescriptions(descriptions);
+    };
+
+    fetchAbilities();
+  }, [pokemon.abilities]);
   const [pokemonImage, setPokemonImage] = useState("");
 
   // Fetch Pokémon image from PokeAPI
@@ -62,28 +79,24 @@ const PokemonProfilePage = () => {
   }, [pokemon.name, pokemon.pokedex_number]);
 
   // Format weaknesses data for the bar chart
-  const weaknessData = {
-    labels: Object.keys(pokemon)
-      .filter((key) => key.startsWith("against_"))
-      .map((key) => key.replace("against_", "")),
-    datasets: [
-      {
-        label: "Damage Taken (1 = Normal)",
-        data: Object.keys(pokemon)
-          .filter((key) => key.startsWith("against_"))
-          .map((key) => parseFloat(pokemon[key])),
-        backgroundColor: (ctx) => {
-          const value = ctx.raw;
-          return value > 1
-            ? "rgba(255, 99, 132, 0.6)" // Weaknesses (red)
-            : value < 1
-            ? "rgba(75, 192, 192, 0.6)" // Resistances (green)
-            : "rgba(255, 206, 86, 0.6)"; // Neutral (yellow)
-        },
-        borderWidth: 1,
-      },
-    ],
-  };
+  const typeEffectiveness = Object.keys(pokemon)
+  .filter(key => key.startsWith("against_"))
+  .reduce((acc, key) => {
+    const type = key.replace("against_", "");
+    const multiplier = parseFloat(pokemon[key]);
+    
+    if (multiplier > 1) {
+      acc.weaknesses.push({ type, multiplier });
+    } else if (multiplier < 1 && multiplier > 0) {
+      acc.resistances.push({ type, multiplier });
+    } else if (multiplier === 0) {
+      acc.immunities.push(type);
+    }
+    return acc;
+  }, { weaknesses: [], resistances: [], immunities: [] });
+
+// Sort weaknesses by multiplier (highest first)
+typeEffectiveness.weaknesses.sort((a, b) => b.multiplier - a.multiplier);
 
   // Radar chart data for stats
   const statsData = {
@@ -148,11 +161,16 @@ const PokemonProfilePage = () => {
       <div className="pokemon-abilities">
         <h3>Abilities</h3>
         <ul>
-          {JSON.parse(pokemon.abilities.replace(/'/g, '"')).map(
-            (ability, index) => (
-              <li key={index}>{ability}</li>
-            )
-          )}
+          {JSON.parse(pokemon.abilities.replace(/'/g, '"')).map((ability) => (
+            <li key={ability}>
+              <div className="ability-name">{ability}</div>
+              {abilityDescriptions[ability] && (
+                <div className="ability-description">
+                  {abilityDescriptions[ability]}
+                </div>
+              )}
+            </li>
+          ))}
         </ul>
       </div>
 
@@ -164,29 +182,87 @@ const PokemonProfilePage = () => {
             options={{
               scales: {
                 r: {
-                  angleLines: { display: true },
+                  pointLabels: {
+                    color: "white",
+                  },
+                  angleLines: { color: "rgba(255, 255, 255, 0.2)" },
+                  grid: { color: "rgba(255, 255, 255, 0.2)" },
                   suggestedMin: 0,
-                  suggestedMax: 255,
+                  suggestedMax: 200,
+                  ticks: {
+                    callback: (value) => `${value}`,
+                    stepSize: 50,
+                    backdropColor: "transparent",
+                    font: { size: 12 },
+                    color: "white",
+                  },
+                },
+              },
+              elements: {
+                point: {
+                  radius: 4,
+                  hoverRadius: 5,
+                  borderWidth: 2,
+                  hoverBorderWidth: 0,
+                },
+                line: {
+                  tension: 0.1,
+                  borderWidth: 3,
+                },
+              },
+              plugins: {
+                legend: {
+                  labels: {
+                    font: {
+                      size: 14,
+                    },
+                    color: "white",
+                  },
                 },
               },
             }}
           />
         </div>
 
-        <div className="chart-container">
-          <h3>Type Weaknesses/Resistances</h3>
-          <Bar
-            data={weaknessData}
-            options={{
-              scales: {
-                y: {
-                  beginAtZero: true,
-                  title: { display: true, text: "Damage Multiplier" },
-                },
-              },
-            }}
-          />
+        <div className="type-effectiveness">
+        <div className="effectiveness-section">
+          <h3>Weaknesses</h3>
+          <div className="type-badge-group">
+            {typeEffectiveness.weaknesses.map(({ type, multiplier }) => (
+              <div key={type} className="type-effectiveness-badge">
+                <TypeBadge type={type} />
+                <span className="multiplier">×{multiplier}</span>
+              </div>
+            ))}
+          </div>
         </div>
+
+        <div className="effectiveness-section">
+          <h3>Resistances</h3>
+          <div className="type-badge-group">
+            {typeEffectiveness.resistances.map(({ type, multiplier }) => (
+              <div key={type} className="type-effectiveness-badge">
+                <TypeBadge type={type} />
+                <span className="multiplier">×{multiplier}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {typeEffectiveness.immunities.length > 0 && (
+          <div className="effectiveness-section">
+            <h3>Immunities</h3>
+            <div className="type-badge-group">
+              {typeEffectiveness.immunities.map(type => (
+                <div key={type} className="type-effectiveness-badge">
+                  <TypeBadge type={type} />
+                  <span className="multiplier">×0</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
       </div>
     </div>
   );
