@@ -1,7 +1,6 @@
 .pokemon-grid-page {
-  width: 1500px;
-  margin: 0 auto;
   padding: 20px; 
+  margin-left: 600px;
   display: flex;
   flex-direction: column;
   align-content: center;

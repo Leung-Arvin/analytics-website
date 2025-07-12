@@ -30,9 +30,10 @@ function App() {
       <PokemonDataProvider pokemonData={pokemonData}>
       <div className='app-container'>
       <Sidebar />
-      </div>
+      
       <div className='main-container'>
         <Outlet/>
+      </div>
       </div>
       </PokemonDataProvider>
     </>

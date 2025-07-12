@@ -9,13 +9,18 @@ import App from './App';
 import PokemonGridPage from './pages/PokemonBrowsePage.jsx/PokemonGridPage';
 import { fetchPokemonById } from './utils/pokeAPIHelpers';
 import PokemonProfilePage from './pages/PokemonProfilePage/PokemonProfilePage';
+import TeamBuilder from './pages/PokemonTeamBuilder.jsx/TeamBuilder';
 
 
 const router = createBrowserRouter([
   {
-    path: '/',
+    path: '/team-builder',
     element: <App />,
     children: [
+      {
+        path: 'team-builder',
+        element: <TeamBuilder />,
+      },
       {
         path: 'pokedex',
         element: <PokemonGridPage />,
