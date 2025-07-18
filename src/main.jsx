@@ -10,6 +10,7 @@ import PokemonGridPage from './pages/PokemonBrowsePage.jsx/PokemonGridPage';
 import { fetchPokemonById } from './utils/pokeAPIHelpers';
 import PokemonProfilePage from './pages/PokemonProfilePage/PokemonProfilePage';
 import TeamBuilder from './pages/PokemonTeamBuilder.jsx/TeamBuilder';
+import './utils/i18n';
 
 
 const router = createBrowserRouter([

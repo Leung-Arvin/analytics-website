@@ -9,7 +9,6 @@
   min-height: 100vh;
 }
 
-
 .main-content {
   position: absolute;
   margin-left: 250px;
@@ -17,6 +16,10 @@
   z-index: 100; 
 }
 
+.global-link {
+  text-decoration: none;
+  color: var(--clr-light-a0)
+}
 .sidebar.collapsed + .main-content {
   margin-left: 70px;
 }

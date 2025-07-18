@@ -1,7 +1,9 @@
 import React from 'react';
 import './TypeBadge.css';
+import { useTranslation } from 'react-i18next';
 
 const TypeBadge = ({ type }) => {
+  const {t} = useTranslation();
   // Type color mappings (official Pokémon colors)
   const typeColors = {
     normal: '#A8A878',
@@ -10,7 +12,7 @@ const TypeBadge = ({ type }) => {
     electric: '#F8D030',
     grass: '#78C850',
     ice: '#98D8D8',
-    fighting: '#C03028',
+    fight: '#c90e0e',
     poison: '#A040A0',
     ground: '#E0C068',
     flying: '#A890F0',
@@ -29,7 +31,7 @@ const TypeBadge = ({ type }) => {
       className="type-badge"
       style={{ backgroundColor: typeColors[type.toLowerCase()] || '#777' }}
     >
-      {type}
+      {t(`types.${type}`)}
     </span>
   );
 };

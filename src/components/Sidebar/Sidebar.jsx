@@ -2,23 +2,31 @@ import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import './Sidebar.css';
 import PokeLogo from '/pokeball_logo.png';
-import { FaAngleLeft, FaAngleRight } from 'react-icons/fa';
+import { FaAngleLeft, FaAngleRight, FaAngleUp } from 'react-icons/fa';
+import { useTranslation } from 'react-i18next';
 
 const Sidebar = () => {
+  const { t, i18n } = useTranslation();
   const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
-  const [selectedLanguage, setSelectedLanguage] = useState('English');
   const [isCollapsed, setIsCollapsed] = useState(false);
   const location = useLocation();
 
   const menuItems = [
-    { path: '/team-builder', icon: '📊', label: 'Team Builder' },
-    { path: '/pokedex', icon: '🔍', label: 'Pokédex' },
+    { path: '/team-builder', icon: '📊', label: t('sidebar.team_builder') },
+    { path: '/pokedex', icon: '🔍', label: t('sidebar.pokedex') },
   ];
 
   const languages = [
     { code: 'en', name: 'English' },
-    { code: 'fr', name: 'Français' }
+    { code: 'fr', name: 'Français' },
   ];
+
+  const handleLanguageChange = (languageCode) => {
+    i18n.changeLanguage(languageCode);
+    setShowLanguageDropdown(false);
+  };
+
+  const currentLanguageName = languages.find(lang => lang.code === i18n.language)?.name || 'English';
 
   return (
     <div className={`sidebar ${isCollapsed ? 'collapsed' : ''}`}>
@@ -26,7 +34,7 @@ const Sidebar = () => {
       <button 
         className="sidebar-toggle"
         onClick={() => setIsCollapsed(!isCollapsed)}
-        aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+        aria-label={isCollapsed ? t('sidebar.expand') : t('sidebar.collapse')}
       >
         {isCollapsed ? <FaAngleRight /> : <FaAngleLeft />}
       </button>
@@ -34,7 +42,7 @@ const Sidebar = () => {
       <div className="sidebar-content">
         <div className="logo-container">
           <img src={PokeLogo} alt="Pokémon Logo" className="logo" />
-          {!isCollapsed && <h2>PokéAnalytics</h2>}
+          {!isCollapsed && <h2>{t('sidebar.title')}</h2>}
           <hr/>
         </div>
         
@@ -43,7 +51,7 @@ const Sidebar = () => {
             {menuItems.map((item) => (
               <li 
                 key={item.path} 
-                className={ location.pathname.includes(item.path) ? 'active' : ''}
+                className={location.pathname.includes(item.path) ? 'active' : ''}
               >
                 <Link to={item.path}>
                   <span className="nav-icon">{item.icon}</span>
@@ -65,11 +73,13 @@ const Sidebar = () => {
             onClick={() => setShowLanguageDropdown(!showLanguageDropdown)}
           >
             <div className="language-current">
-              <img src="/globe_icon.png" alt="Language" className="globe-icon" />
+              <span className="globe-icon">🌐</span>
               {!isCollapsed && (
                 <>
-                  <span>{selectedLanguage}</span>
-                  <span className={`dropdown-arrow ${showLanguageDropdown ? 'open' : ''}`}>▼</span>
+                  <span>{currentLanguageName}</span>
+                  <span className={`dropdown-arrow ${showLanguageDropdown ? 'open' : ''}`}>
+                    <FaAngleUp/>
+                  </span>
                 </>
               )}
             </div>
@@ -79,13 +89,11 @@ const Sidebar = () => {
                 {languages.map((language) => (
                   <div
                     key={language.code}
-                    className="language-option"
-                    onClick={() => {
-                      setSelectedLanguage(language.name);
-                      setShowLanguageDropdown(false);
-                    }}
+                    className={`language-option ${i18n.language === language.code ? 'selected' : ''}`}
+                    value={language.code}
+                    onClick={() => handleLanguageChange(language.code)}
                   >
-                    <span>{language.name}</span>
+                    {language.name}
                   </div>
                 ))}
               </div>

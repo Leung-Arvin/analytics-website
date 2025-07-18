@@ -1,7 +1,7 @@
 /* Help button styles */
 .help-button-container {
   position: relative;
-  display: inline-block;
+  bottom: 5%;
   margin-left: 10px;
 }
 
@@ -49,6 +49,7 @@
   position: absolute;
   top: 5px;
   right: 5px;
+  padding: 5px;
   background: var(--clr-primary-a10);
   border: none;
   color: var(--clr-light-a60);

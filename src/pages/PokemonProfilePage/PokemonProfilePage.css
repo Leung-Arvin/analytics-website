@@ -187,3 +187,34 @@
   visibility: visible;
   opacity: 1;
 }
+
+/* Breadcrumbs */
+.breadcrumbs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 0;
+  font-size: 0.9rem;
+  color: var(--clr-light-a60);
+}
+
+.breadcrumbs a {
+  color: var(--clr-light-a80);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.breadcrumbs a:hover {
+  color: var(--clr-primary-a10);
+  text-decoration: underline;
+}
+
+.breadcrumb-separator {
+  margin: 0 4px;
+  color: var(--clr-light-a60);
+}
+
+.current-page {
+  color: var(--clr-light-a0);
+  font-weight: 500;
+}

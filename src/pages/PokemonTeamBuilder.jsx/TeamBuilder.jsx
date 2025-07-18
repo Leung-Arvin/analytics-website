@@ -7,11 +7,14 @@ import { IoMdCloseCircleOutline } from "react-icons/io";
 import { typeColors } from "../../utils/pokemonColors";
 import { HelpButton } from "../../components/HelpButton/HelpButton";
 import { FaExpandAlt } from "react-icons/fa";
-import { fetchAbilityDescription } from "../../utils/pokeAPIHelpers";
+import { FaBook } from "react-icons/fa";
+import { Link } from "react-router";
+import { useTranslation } from "react-i18next";
 
 ChartJS.register(...registerables);
 
 const TeamBuilder = () => {
+  const {t, i18n } = useTranslation();
   const pokemonData = useContext(PokemonDataContext);
   const [team, setTeam] = useState([]);
   const [selectedPokemon, setSelectedPokemon] = useState(null);
@@ -20,7 +23,61 @@ const TeamBuilder = () => {
   const [sprites, setSprites] = useState({});
   const [activeTab, setActiveTab] = useState("coverage");
   const [expandedGraph, setExpandedGraph] = useState(null);
-  const [abilityInfo, setAbilityInfo] = useState({});
+
+  const saveTeamToLocalStorage = (team) => {
+    try {
+      localStorage.setItem("pokemonTeam", JSON.stringify(team));
+    } catch (error) {
+      console.error("Failed to save team to localStorage:", error);
+    }
+  };
+
+  const loadTeamFromLocalStorage = () => {
+    try {
+      const savedTeam = localStorage.getItem("pokemonTeam");
+      return savedTeam ? JSON.parse(savedTeam) : [];
+    } catch (error) {
+      console.error("Failed to load team from localStorage:", error);
+      return [];
+    }
+  };
+
+  useEffect(() => {
+    const savedTeam = loadTeamFromLocalStorage();
+    if (savedTeam.length > 0) {
+      setTeam(savedTeam);
+
+      // Preload sprites for saved team
+      savedTeam.forEach(async (pokemon) => {
+        if (!sprites[pokemon.pokedex_number]) {
+          try {
+            const response = await fetch(
+              `https://pokeapi.co/api/v2/pokemon/${pokemon.name.toLowerCase()}`
+            );
+            const data = await response.json();
+            const sprite =
+              data.sprites.other["official-artwork"].front_default ||
+              `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${pokemon.pokedex_number}.png`;
+
+            setSprites((prev) => ({
+              ...prev,
+              [pokemon.pokedex_number]: sprite,
+            }));
+          } catch (error) {
+            console.error("Failed to fetch Pokémon sprite:", error);
+            setSprites((prev) => ({
+              ...prev,
+              [pokemon.pokedex_number]: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${pokemon.pokedex_number}.png`,
+            }));
+          }
+        }
+      });
+    }
+  }, []);
+
+  useEffect(() => {
+    saveTeamToLocalStorage(team);
+  }, [team]);
 
   useEffect(() => {
     if (searchQuery.trim() == "") {
@@ -37,12 +94,12 @@ const TeamBuilder = () => {
 
   function getStatColor(stat) {
     const colors = {
-      HP: "#FF5959",
-      Attack: "#F5AC78",
-      Defense: "#FAE078",
+      hp: "#FF5959",
+      attack: "#F5AC78",
+      defense: "#FAE078",
       sp_attack: "#9DB7F5",
       sp_defense: "#A7DB8D",
-      Speed: "#FA92B2",
+      speed: "#FA92B2",
     };
     return colors[stat];
   }
@@ -56,7 +113,7 @@ const TeamBuilder = () => {
 
     try {
       // Check if sprite is already cached
-      
+
       if (!sprites[pokemon.pokedex_number]) {
         const response = await fetch(
           `https://pokeapi.co/api/v2/pokemon/${pokemon.name.toLowerCase()}`
@@ -92,28 +149,28 @@ const TeamBuilder = () => {
   // Graph 1: Type Coverage Radar Chart
   const typeCoverageData = {
     labels: [
-      "Normal",
-      "Fire",
-      "Water",
-      "Electric",
-      "Grass",
-      "Ice",
-      "Fighting",
-      "Poison",
-      "Ground",
-      "Flying",
-      "Psychic",
-      "Bug",
-      "Rock",
-      "Ghost",
-      "Dragon",
-      "Dark",
-      "Steel",
-      "Fairy",
+      t('types.normal'),
+      t('types.fire'),
+      t('types.water'),
+      t('types.electric'),
+      t('types.grass'),
+      t('types.ice'),
+      t('types.fighting'),
+      t('types.poison'),
+      t('types.ground'),
+      t('types.flying'),
+      t('types.psychic'),
+      t('types.bug'),
+      t('types.rock'),
+      t('types.ghost'),
+      t('types.dragon'),
+      t('types.dark'),
+      t('types.steel'),
+      t('types.fairy'),
     ],
     datasets: [
       {
-        label: "Type Coverage",
+        label: t('team_builder.type_coverage'),
         data: calculateTypeCoverage(),
         backgroundColor: "rgba(54, 162, 235, 0.2)",
         borderColor: "rgba(54, 162, 235, 1)",
@@ -122,29 +179,33 @@ const TeamBuilder = () => {
       },
     ],
   };
+  
 
   // Graph 2: Stat Distribution Bar Chart
   const statDistributionData = {
     labels: team.map((p) => p.name),
     datasets: [
-      "HP",
-      "Attack",
-      "Defense",
-      "sp_attack",
-      "sp_defense",
-      "Speed",
-    ].map((stat) => ({
-      label: stat,
-      data: team.map((p) => p[stat.toLowerCase()]),
-      backgroundColor: getStatColor(stat),
-    })),
+      t('stats.hp'),
+      t('stats.attack'),
+      t('stats.defense'),
+      t('stats.sp_attack'),
+      t('stats.sp_defense'),
+      t('stats.speed'),
+    ].map((stat, index) => {
+      const statKeys = ['hp', 'attack', 'defense', 'sp_attack', 'sp_defense', 'speed'];
+      return {
+        label: stat,
+        data: team.map((p) => p[statKeys[index]]),
+        backgroundColor: getStatColor(statKeys[index]),
+      };
+    }),
   };
 
   // Graph 3: Type Balance Pie Chart
   const typeBalanceData = {
     labels: [
       ...new Set(team.flatMap((p) => [p.type1, p.type2].filter(Boolean))),
-    ],
+    ].map(type => t(`types.${type.toLowerCase()}`)),
     datasets: [
       {
         data: [
@@ -167,28 +228,28 @@ const TeamBuilder = () => {
 
   const teamWeaknessData = {
     labels: [
-      "Normal",
-      "Fire",
-      "Water",
-      "Electric",
-      "Grass",
-      "Ice",
-      "Fighting",
-      "Poison",
-      "Ground",
-      "Flying",
-      "Psychic",
-      "Bug",
-      "Rock",
-      "Ghost",
-      "Dragon",
-      "Dark",
-      "Steel",
-      "Fairy",
+      t('types.normal'),
+      t('types.fire'),
+      t('types.water'),
+      t('types.electric'),
+      t('types.grass'),
+      t('types.ice'),
+      t('types.fighting'),
+      t('types.poison'),
+      t('types.ground'),
+      t('types.flying'),
+      t('types.psychic'),
+      t('types.bug'),
+      t('types.rock'),
+      t('types.ghost'),
+      t('types.dragon'),
+      t('types.dark'),
+      t('types.steel'),
+      t('types.fairy'),
     ],
     datasets: [
       {
-        label: "Team Weakness Score",
+        label: t('team_builder.team_weakness_score'),
         data: calculateTeamWeaknesses(),
         backgroundColor: (ctx) => {
           const value = ctx.raw;
@@ -280,7 +341,7 @@ const TeamBuilder = () => {
           return (
             <Radar
               data={typeCoverageData}
-              options={getRadarOptions("Offensive Type Coverage")}
+              options={getRadarOptions()}
               height="400px"
               width="600px"
             />
@@ -289,7 +350,7 @@ const TeamBuilder = () => {
           return (
             <Radar
               data={teamWeaknessData}
-              options={getRadarOptions("Defensive Vulnerability")}
+              options={getRadarOptions()}
               height="400px"
               width="600px"
             />
@@ -446,14 +507,61 @@ const TeamBuilder = () => {
     },
   });
 
+  const generateRandomTeam = () => {
+    if (team.length > 0) return; // Don't generate if team isn't empty
+    
+    // Create a copy of pokemonData array
+    const pokemonDataCopy = [...pokemonData];
+    const randomTeam = [];
+    
+    // Get 6 unique random pokemon
+    for (let i = 0; i < 6 && pokemonDataCopy.length > 0; i++) {
+      const randomIndex = Math.floor(Math.random() * pokemonDataCopy.length);
+      const randomPokemon = pokemonDataCopy.splice(randomIndex, 1)[0];
+      randomTeam.push(randomPokemon);
+    }
+    
+    setTeam(randomTeam);
+    
+    // Preload sprites for the random team
+    randomTeam.forEach(async (pokemon) => {
+      if (!sprites[pokemon.pokedex_number]) {
+        try {
+          const response = await fetch(
+            `https://pokeapi.co/api/v2/pokemon/${pokemon.name.toLowerCase()}`
+          );
+          const data = await response.json();
+          const sprite =
+            data.sprites.other["official-artwork"].front_default ||
+            `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${pokemon.pokedex_number}.png`;
+  
+          setSprites((prev) => ({
+            ...prev,
+            [pokemon.pokedex_number]: sprite,
+          }));
+        } catch (error) {
+          console.error("Failed to fetch Pokémon sprite:", error);
+          setSprites((prev) => ({
+            ...prev,
+            [pokemon.pokedex_number]: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${pokemon.pokedex_number}.png`,
+          }));
+        }
+      }
+    });
+  };
+
+  const clearTeam = () => {
+    setTeam([]);
+  };
+
   return (
     <div className="team-builder">
       <div className="team-selection">
-        <h2>Create Your Team ({team.length}/6)</h2>
+        <h2>{t('team_builder.create_team', {count: team.length})}</h2>
         <div className="pokemon-search">
           <input
             type="text"
-            placeholder="Search Pokémon by name"
+            placeholder={t('team_builder.search_placeholder')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -476,9 +584,15 @@ const TeamBuilder = () => {
         <div className="team-slots">
           {team.length === 0 ? (
             <div className="empty-team-prompt">
-              <p>Your team is empty</p>
-              <img src="/empty_pokeball.png"/>
-              <small>Search and add Pokémon to get started</small>
+              <p>{t('team_builder.empty_team')}</p>
+              <img src="/empty_pokeball.png" alt={t('team_builder.empty_team_alt')} />
+              <small>{t('team_builder.empty_team_hint')}</small>
+              <button 
+        className="random-team-button"
+        onClick={generateRandomTeam}
+      >
+        {t('team_builder.generate_random_team')}
+      </button>
             </div>
           ) : (
             Array(6)
@@ -499,27 +613,50 @@ const TeamBuilder = () => {
                         src={sprites[team[i].pokedex_number]}
                         alt={team[i].name}
                       />
-                       <div className="pokemon-info">
-              <span>#{team[i].pokedex_number} {team[i].name}</span>
-            </div>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          removeFromTeam(team[i].pokedex_number);
-                        }}
-                      >
-                        <IoMdCloseCircleOutline className="remove-icon" />
-                      </button>
+                      <div className="pokemon-info">
+                        <span>
+                          #{team[i].pokedex_number} {team[i].name}
+                        </span>
+                      </div>
+                      <div className="team-actions">
+                        <div className="team-tooltip-container">
+                        <Link
+                        className="global-link"
+                        to={`/pokemon/${team[i]?.pokedex_number}`}
+                        state={{ from: '/team-builder' }}>
+                     
+                            <FaBook />
+                        
+                          </Link>
+                          <span className="team-tooltip">{t('team_builder.view_details')}</span>
+                        </div>
+
+                        <div className="team-tooltip-container">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              removeFromTeam(team[i].pokedex_number);
+                            }}
+                          >
+                            <IoMdCloseCircleOutline className="remove-icon" />
+                          </button>
+                          <span className="team-tooltip">{t('team_builder.remove')}</span>
+                        </div>
+                      </div>
                     </div>
                   ) : (
-                    <div className="empty-slot">Slot {i + 1}</div>
+                    <div className="empty-slot">{t('team_builder.slot', { number: i + 1 })}</div>
                   )}
                   
                 </div>
-                
               ))
-              
-          )}
+          ) }
+          {team.length > 0 && (<button 
+          className="clear-team-button"
+          onClick={clearTeam}
+        >
+          {t('team_builder.clear_team')}
+        </button>)}
         </div>
       </div>
       {team.length > 0 ? (
@@ -527,48 +664,46 @@ const TeamBuilder = () => {
           <div className="analysis-graph">
             <div className="radar-tabs">
               <button
-                className={activeTab === "coverage" ? " active" : ""}
+                className={activeTab === "coverage" ? "active radar-button" : " radar-button"}
                 onClick={() => setActiveTab("coverage")}
               >
-                Type Coverage
+                {t('team_builder.type_coverage')}
               </button>
               <button
-                className={activeTab === "weakness" ? " active" : ""}
+                className={activeTab === "weakness" ? "active radar-button" : " radar-button"}
                 onClick={() => setActiveTab("weakness")}
               >
-                Team Weaknesses
+                 {t('team_builder.team_weaknesses')}
               </button>
+              <div className="team-tooltip-container">
               <HelpButton
                 content={
                   activeTab === "coverage" ? (
                     <div>
-                      <p>
-                        This shows how many super-effective moves your team has
-                        against each type.
-                      </p>
-                      <strong>Good team indicators:</strong>
-                      <ul>
-                        <li>Coverage across many types (wider shape)</li>
-                        <li>No major gaps (no types with 0 coverage)</li>
-                        <li>Multiple strong coverages (peaks above 2)</li>
-                      </ul>
-                    </div>
+                        <p>{t('team_builder.coverage_help')}</p>
+                        <strong>{t('team_builder.good_indicators')}:</strong>
+                        <ul>
+                          <li>{t('team_builder.coverage_indicator1')}</li>
+                          <li>{t('team_builder.coverage_indicator2')}</li>
+                          <li>{t('team_builder.coverage_indicator3')}</li>
+                        </ul>
+                      </div>
                   ) : (
                     <div>
-                      <p>
-                        Shows your team's average vulnerability to each type
-                        (higher = worse).
-                      </p>
-                      <strong>Good team indicators:</strong>
-                      <ul>
-                        <li>Few spikes above 2x (red areas)</li>
-                        <li>Balanced resistances (blue/green areas)</li>
-                        <li>No single type with extreme weakness</li>
-                      </ul>
+                      <p>{t('team_builder.weakness_help')}</p>
+                        <strong>{t('team_builder.good_indicators')}:</strong>
+                        <ul>
+                          <li>{t('team_builder.weakness_indicator1')}</li>
+                          <li>{t('team_builder.weakness_indicator2')}</li>
+                          <li>{t('team_builder.weakness_indicator3')}</li>
+                        </ul>
                     </div>
                   )
                 }
               />
+              <span className="team-tooltip">{t('team_builder.graph_info')}</span>
+              </div>
+              <div className="team-tooltip-container">
               <button
                 className="expand-button"
                 onClick={() =>
@@ -581,6 +716,8 @@ const TeamBuilder = () => {
                   <FaExpandAlt />
                 </span>
               </button>
+              <span className="team-tooltip">{t('team_builder.zoom_in')}</span>
+              </div>
             </div>
 
             <div className="radar-container">
@@ -693,39 +830,45 @@ const TeamBuilder = () => {
               {activeTab === "weakness" && (
                 <div className="weakness-">
                   <span style={{ color: "#ff6384" }}>
-                    High Vulnerability ({">"}2x)
+                    {t('team_builder.high_vulnerability')}
                   </span>
                   <span style={{ color: "#ff9f40" }}>
-                    Moderate Weakness (1-2x)
+                  {t('team_builder.moderate_weakness')}
                   </span>
-                  <span style={{ color: "#4bc0c0" }}>Resistant ({"<"}1x)</span>
+                  <span style={{ color: "#4bc0c0" }}>{t('team_builder.resistant')}</span>
                 </div>
               )}
             </div>
           </div>
           <div className="analysis-graph type-balance">
             <div className="graph-header">
-              <h3>Type Balance</h3>
+              <h3>{t('team_builder.type_balance')}</h3>
+              <div className="team-tooltip-container">
               <HelpButton
                 content={
                   <div>
-                    <p>Shows the distribution of types in your team.</p>
-                    <strong>Good team indicators:</strong>
-                    <ul>
-                      <li>Diverse type representation</li>
-                      <li>No over-reliance on one type</li>
-                      <li>Complementary type pairings</li>
-                    </ul>
-                    <p>Tip: Aim for 6-10 unique types across your team.</p>
-                  </div>
+                      <p>{t('team_builder.type_balance_help')}</p>
+                      <strong>{t('team_builder.good_indicators')}:</strong>
+                      <ul>
+                        <li>{t('team_builder.balance_indicator1')}</li>
+                        <li>{t('team_builder.balance_indicator2')}</li>
+                        <li>{t('team_builder.balance_indicator3')}</li>
+                      </ul>
+                      <p>{t('team_builder.type_balance_tip')}</p>
+                    </div>
                 }
               />
+              <span className="team-tooltip">{t('team_builder.graph_info')}</span>
+              </div>
+              <div className="team-tooltip-container">
               <button
                 className="expand-button"
                 onClick={() => setExpandedGraph("typeBalance")}
               >
                 <FaExpandAlt />
               </button>
+              <span className="team-tooltip">{t('team_builder.zoom_in')}</span>
+              </div>
             </div>
             <Pie
               data={typeBalanceData}
@@ -756,32 +899,33 @@ const TeamBuilder = () => {
           </div>
           <div className="analysis-graph stat-distribution">
             <div className="graph-header">
-              <h3>Stat Distribution</h3>
+              <h3>{t('team_builder.stat_distribution')}</h3>
+              <div className="team-tooltip-container">
               <HelpButton
                 content={
                   <div>
-                    <p>Compares base stats across your team members.</p>
-                    <strong>Good team indicators:</strong>
-                    <ul>
-                      <li>Balanced stats overall</li>
-                      <li>
-                        Specialized roles (some high Attack, others high
-                        Defense)
-                      </li>
-                      <li>No extreme weaknesses in any stat</li>
-                    </ul>
-                    <p>
-                      Tip: Aim for at least 2 Pokémon with high HP/Defenses.
-                    </p>
-                  </div>
+                  <p>{t('team_builder.stat_distribution_help')}</p>
+                  <strong>{t('team_builder.good_indicators')}:</strong>
+                  <ul>
+                    <li>{t('team_builder.stat_indicator1')}</li>
+                    <li>{t('team_builder.stat_indicator2')}</li>
+                    <li>{t('team_builder.stat_indicator3')}</li>
+                  </ul>
+                  <p>{t('team_builder.stat_distribution_tip')}</p>
+                </div>
                 }
               />
+              <span className="team-tooltip">{t('team_builder.graph_info')}</span>
+              </div>
+              <div className="team-tooltip-container">
               <button
                 className="expand-button"
                 onClick={() => setExpandedGraph("statDistribution")}
               >
                 <FaExpandAlt />
               </button>
+              <span className="team-tooltip">{t('team_builder.zoom_in')}</span>
+              </div>
             </div>
             <Bar
               data={statDistributionData}
@@ -841,11 +985,8 @@ const TeamBuilder = () => {
         </div>
       ) : (
         <div className="empty-analysis">
-          <h3>Add Pokémon to your team to see analysis</h3>
-          <p>
-            Select at least one Pokémon to view type coverage, weaknesses, and
-            stat distributions
-          </p>
+          <h3>{t('team_builder.add_pokemon_title')}</h3>
+          <p>{t('team_builder.add_pokemon_message')}</p>
         </div>
       )}
       <GraphModal />
