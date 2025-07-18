@@ -638,7 +638,22 @@ const TeamBuilder = () => {
           const sprite =
             data.sprites.other["official-artwork"].front_default ||
             `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${pokemon.pokedex_number}.png`;
-
+          
+            const speciesData = await fetchPokemonSpeciesData(
+              pokemon.pokedex_number
+            );
+            const localizedName =
+              speciesData.names.find((name) => name.language.name === i18n.language)
+                ?.name || pokemon.name;
+    
+            setLocalizedNames((prev) => ({
+              ...prev,
+              [pokemon.pokedex_number]: {
+                name: localizedName,
+                language: i18n.language,
+              },
+            }));
+            
           setSprites((prev) => ({
             ...prev,
             [pokemon.pokedex_number]: sprite,
