@@ -10,11 +10,12 @@ import { FaExpandAlt } from "react-icons/fa";
 import { FaBook } from "react-icons/fa";
 import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
+import { fetchPokemonSpeciesData } from "../../utils/pokeAPIHelpers";
 
 ChartJS.register(...registerables);
 
 const TeamBuilder = () => {
-  const {t, i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
   const pokemonData = useContext(PokemonDataContext);
   const [team, setTeam] = useState([]);
   const [selectedPokemon, setSelectedPokemon] = useState(null);
@@ -23,6 +24,7 @@ const TeamBuilder = () => {
   const [sprites, setSprites] = useState({});
   const [activeTab, setActiveTab] = useState("coverage");
   const [expandedGraph, setExpandedGraph] = useState(null);
+  const [localizedNames, setLocalizedNames] = useState({});
 
   const saveTeamToLocalStorage = (team) => {
     try {
@@ -80,17 +82,86 @@ const TeamBuilder = () => {
   }, [team]);
 
   useEffect(() => {
-    if (searchQuery.trim() == "") {
+    if (searchQuery.trim() === "") {
       setSearchResults([]);
       return;
     }
+  
+    const filterResults = async () => {
+      // First filter based on English names (immediate response)
+      const englishResults = pokemonData.filter((pokemon) => 
+        pokemon.name?.toLowerCase().includes(searchQuery.toLowerCase())
+      ).slice(0, 5);
+  
+      // Set initial results with English names
+      setSearchResults(englishResults);
+  
+      // Then fetch and update with localized names
+      const translatedResults = await Promise.all(
+        englishResults.map(async (pokemon) => {
+          try {
+            const speciesData = await fetchPokemonSpeciesData(pokemon.pokedex_number);
+            const localizedName = speciesData.names.find(
+              name => name.language.name === i18n.language
+            )?.name || pokemon.name;
+            
+            // Update localized names cache
+            setLocalizedNames(prev => ({
+              ...prev,
+              [pokemon.pokedex_number]: {
+                name: localizedName,
+                language: i18n.language
+              }
+            }));
+  
+            return pokemon; // Return original pokemon - the name will update via state
+          } catch (error) {
+            console.error(`Error updating name for Pokemon ${pokemon.pokedex_number}:`, error);
+            return pokemon;
+          }
+        })
+      );
+  
+      // Update results with translations (though names will update via localizedNames state)
+      setSearchResults(translatedResults);
+    };
+  
+    filterResults();
+  }, [searchQuery, pokemonData, i18n.language]);
 
-    const results = pokemonData.filter((pokemon) =>
-      pokemon.name?.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-
-    setSearchResults(results.slice(0, 5));
-  }, [searchQuery, pokemonData]);
+  useEffect(() => {
+    const updateLocalizedNames = async () => {
+      const newLocalizedNames = { ...localizedNames };
+      
+      await Promise.all(
+        team.map(async (pokemon) => {
+          try {
+            const speciesData = await fetchPokemonSpeciesData(pokemon.pokedex_number);
+            const localizedName = speciesData.names.find(
+              name => name.language.name === i18n.language
+            )?.name || pokemon.name;
+            
+            newLocalizedNames[pokemon.pokedex_number] = {
+              name: localizedName,
+              language: i18n.language
+            };
+          } catch (error) {
+            console.error(`Error updating name for Pokemon ${pokemon.pokedex_number}:`, error);
+            newLocalizedNames[pokemon.pokedex_number] = {
+              name: pokemon.name,
+              language: i18n.language
+            };
+          }
+        })
+      );
+  
+      setLocalizedNames(newLocalizedNames);
+    };
+  
+    if (team.length > 0) {
+      updateLocalizedNames();
+    }
+  }, [i18n.language]);
 
   function getStatColor(stat) {
     const colors = {
@@ -129,6 +200,26 @@ const TeamBuilder = () => {
         }));
       }
 
+      if (
+        !localizedNames[pokemon.pokedex_number] ||
+        localizedNames[pokemon.pokedex_number].language !== i18n.language
+      ) {
+        const speciesData = await fetchPokemonSpeciesData(
+          pokemon.pokedex_number
+        );
+        const localizedName =
+          speciesData.names.find((name) => name.language.name === i18n.language)
+            ?.name || pokemon.name;
+
+        setLocalizedNames((prev) => ({
+          ...prev,
+          [pokemon.pokedex_number]: {
+            name: localizedName,
+            language: i18n.language,
+          },
+        }));
+      }
+
       setTeam((prev) => [...prev, pokemon]);
       setSearchQuery("");
       setSearchResults([]);
@@ -137,6 +228,13 @@ const TeamBuilder = () => {
       setSprites((prev) => ({
         ...prev,
         [pokemon.pokedex_number]: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${pokemon.pokedex_number}.png`,
+      }));
+      setLocalizedNames((prev) => ({
+        ...prev,
+        [pokemon.pokedex_number]: {
+          name: pokemon.name,
+          language: i18n.language,
+        },
       }));
       setTeam((prev) => [...prev, pokemon]);
     }
@@ -149,28 +247,28 @@ const TeamBuilder = () => {
   // Graph 1: Type Coverage Radar Chart
   const typeCoverageData = {
     labels: [
-      t('types.normal'),
-      t('types.fire'),
-      t('types.water'),
-      t('types.electric'),
-      t('types.grass'),
-      t('types.ice'),
-      t('types.fighting'),
-      t('types.poison'),
-      t('types.ground'),
-      t('types.flying'),
-      t('types.psychic'),
-      t('types.bug'),
-      t('types.rock'),
-      t('types.ghost'),
-      t('types.dragon'),
-      t('types.dark'),
-      t('types.steel'),
-      t('types.fairy'),
+      t("types.normal"),
+      t("types.fire"),
+      t("types.water"),
+      t("types.electric"),
+      t("types.grass"),
+      t("types.ice"),
+      t("types.fighting"),
+      t("types.poison"),
+      t("types.ground"),
+      t("types.flying"),
+      t("types.psychic"),
+      t("types.bug"),
+      t("types.rock"),
+      t("types.ghost"),
+      t("types.dragon"),
+      t("types.dark"),
+      t("types.steel"),
+      t("types.fairy"),
     ],
     datasets: [
       {
-        label: t('team_builder.type_coverage'),
+        label: t("team_builder.type_coverage"),
         data: calculateTypeCoverage(),
         backgroundColor: "rgba(54, 162, 235, 0.2)",
         borderColor: "rgba(54, 162, 235, 1)",
@@ -179,20 +277,26 @@ const TeamBuilder = () => {
       },
     ],
   };
-  
 
   // Graph 2: Stat Distribution Bar Chart
   const statDistributionData = {
     labels: team.map((p) => p.name),
     datasets: [
-      t('stats.hp'),
-      t('stats.attack'),
-      t('stats.defense'),
-      t('stats.sp_attack'),
-      t('stats.sp_defense'),
-      t('stats.speed'),
+      t("stats.hp"),
+      t("stats.attack"),
+      t("stats.defense"),
+      t("stats.sp_attack"),
+      t("stats.sp_defense"),
+      t("stats.speed"),
     ].map((stat, index) => {
-      const statKeys = ['hp', 'attack', 'defense', 'sp_attack', 'sp_defense', 'speed'];
+      const statKeys = [
+        "hp",
+        "attack",
+        "defense",
+        "sp_attack",
+        "sp_defense",
+        "speed",
+      ];
       return {
         label: stat,
         data: team.map((p) => p[statKeys[index]]),
@@ -205,7 +309,7 @@ const TeamBuilder = () => {
   const typeBalanceData = {
     labels: [
       ...new Set(team.flatMap((p) => [p.type1, p.type2].filter(Boolean))),
-    ].map(type => t(`types.${type.toLowerCase()}`)),
+    ].map((type) => t(`types.${type.toLowerCase()}`)),
     datasets: [
       {
         data: [
@@ -228,28 +332,28 @@ const TeamBuilder = () => {
 
   const teamWeaknessData = {
     labels: [
-      t('types.normal'),
-      t('types.fire'),
-      t('types.water'),
-      t('types.electric'),
-      t('types.grass'),
-      t('types.ice'),
-      t('types.fighting'),
-      t('types.poison'),
-      t('types.ground'),
-      t('types.flying'),
-      t('types.psychic'),
-      t('types.bug'),
-      t('types.rock'),
-      t('types.ghost'),
-      t('types.dragon'),
-      t('types.dark'),
-      t('types.steel'),
-      t('types.fairy'),
+      t("types.normal"),
+      t("types.fire"),
+      t("types.water"),
+      t("types.electric"),
+      t("types.grass"),
+      t("types.ice"),
+      t("types.fighting"),
+      t("types.poison"),
+      t("types.ground"),
+      t("types.flying"),
+      t("types.psychic"),
+      t("types.bug"),
+      t("types.rock"),
+      t("types.ghost"),
+      t("types.dragon"),
+      t("types.dark"),
+      t("types.steel"),
+      t("types.fairy"),
     ],
     datasets: [
       {
-        label: t('team_builder.team_weakness_score'),
+        label: t("team_builder.team_weakness_score"),
         data: calculateTeamWeaknesses(),
         backgroundColor: (ctx) => {
           const value = ctx.raw;
@@ -509,20 +613,20 @@ const TeamBuilder = () => {
 
   const generateRandomTeam = () => {
     if (team.length > 0) return; // Don't generate if team isn't empty
-    
+
     // Create a copy of pokemonData array
     const pokemonDataCopy = [...pokemonData];
     const randomTeam = [];
-    
+
     // Get 6 unique random pokemon
     for (let i = 0; i < 6 && pokemonDataCopy.length > 0; i++) {
       const randomIndex = Math.floor(Math.random() * pokemonDataCopy.length);
       const randomPokemon = pokemonDataCopy.splice(randomIndex, 1)[0];
       randomTeam.push(randomPokemon);
     }
-    
+
     setTeam(randomTeam);
-    
+
     // Preload sprites for the random team
     randomTeam.forEach(async (pokemon) => {
       if (!sprites[pokemon.pokedex_number]) {
@@ -534,7 +638,7 @@ const TeamBuilder = () => {
           const sprite =
             data.sprites.other["official-artwork"].front_default ||
             `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${pokemon.pokedex_number}.png`;
-  
+
           setSprites((prev) => ({
             ...prev,
             [pokemon.pokedex_number]: sprite,
@@ -557,11 +661,11 @@ const TeamBuilder = () => {
   return (
     <div className="team-builder">
       <div className="team-selection">
-        <h2>{t('team_builder.create_team', {count: team.length})}</h2>
+        <h2>{t("team_builder.create_team", { count: team.length })}</h2>
         <div className="pokemon-search">
           <input
             type="text"
-            placeholder={t('team_builder.search_placeholder')}
+            placeholder={t("team_builder.search_placeholder")}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -574,7 +678,9 @@ const TeamBuilder = () => {
                   onClick={() => addToTeam(pokemon)}
                 >
                   <span>
-                    #{pokemon.pokedex_number} {pokemon.name}
+                    #{pokemon.pokedex_number}{" "}
+                    {localizedNames[pokemon.pokedex_number]?.name ||
+                      pokemon.name}
                   </span>
                 </div>
               ))}
@@ -584,15 +690,18 @@ const TeamBuilder = () => {
         <div className="team-slots">
           {team.length === 0 ? (
             <div className="empty-team-prompt">
-              <p>{t('team_builder.empty_team')}</p>
-              <img src="/empty_pokeball.png" alt={t('team_builder.empty_team_alt')} />
-              <small>{t('team_builder.empty_team_hint')}</small>
-              <button 
-        className="random-team-button"
-        onClick={generateRandomTeam}
-      >
-        {t('team_builder.generate_random_team')}
-      </button>
+              <p>{t("team_builder.empty_team")}</p>
+              <img
+                src="/empty_pokeball.png"
+                alt={t("team_builder.empty_team_alt")}
+              />
+              <small>{t("team_builder.empty_team_hint")}</small>
+              <button
+                className="random-team-button"
+                onClick={generateRandomTeam}
+              >
+                {t("team_builder.generate_random_team")}
+              </button>
             </div>
           ) : (
             Array(6)
@@ -611,24 +720,25 @@ const TeamBuilder = () => {
                     >
                       <img
                         src={sprites[team[i].pokedex_number]}
-                        alt={team[i].name}
+                        alt={localizedNames[team[i].pokedex_number]?.name || team[i].name}
                       />
                       <div className="pokemon-info">
                         <span>
-                          #{team[i].pokedex_number} {team[i].name}
+                        #{team[i].pokedex_number} {localizedNames[team[i].pokedex_number]?.name || team[i].name}
                         </span>
                       </div>
                       <div className="team-actions">
                         <div className="team-tooltip-container">
-                        <Link
-                        className="global-link"
-                        to={`/pokemon/${team[i]?.pokedex_number}`}
-                        state={{ from: '/team-builder' }}>
-                     
+                          <Link
+                            className="global-link"
+                            to={`/pokemon/${team[i]?.pokedex_number}`}
+                            state={{ from: "/team-builder" }}
+                          >
                             <FaBook />
-                        
                           </Link>
-                          <span className="team-tooltip">{t('team_builder.view_details')}</span>
+                          <span className="team-tooltip">
+                            {t("team_builder.view_details")}
+                          </span>
                         </div>
 
                         <div className="team-tooltip-container">
@@ -640,23 +750,25 @@ const TeamBuilder = () => {
                           >
                             <IoMdCloseCircleOutline className="remove-icon" />
                           </button>
-                          <span className="team-tooltip">{t('team_builder.remove')}</span>
+                          <span className="team-tooltip">
+                            {t("team_builder.remove")}
+                          </span>
                         </div>
                       </div>
                     </div>
                   ) : (
-                    <div className="empty-slot">{t('team_builder.slot', { number: i + 1 })}</div>
+                    <div className="empty-slot">
+                      {t("team_builder.slot", { number: i + 1 })}
+                    </div>
                   )}
-                  
                 </div>
               ))
-          ) }
-          {team.length > 0 && (<button 
-          className="clear-team-button"
-          onClick={clearTeam}
-        >
-          {t('team_builder.clear_team')}
-        </button>)}
+          )}
+          {team.length > 0 && (
+            <button className="clear-team-button" onClick={clearTeam}>
+              {t("team_builder.clear_team")}
+            </button>
+          )}
         </div>
       </div>
       {team.length > 0 ? (
@@ -664,59 +776,71 @@ const TeamBuilder = () => {
           <div className="analysis-graph">
             <div className="radar-tabs">
               <button
-                className={activeTab === "coverage" ? "active radar-button" : " radar-button"}
+                className={
+                  activeTab === "coverage"
+                    ? "active radar-button"
+                    : " radar-button"
+                }
                 onClick={() => setActiveTab("coverage")}
               >
-                {t('team_builder.type_coverage')}
+                {t("team_builder.type_coverage")}
               </button>
               <button
-                className={activeTab === "weakness" ? "active radar-button" : " radar-button"}
+                className={
+                  activeTab === "weakness"
+                    ? "active radar-button"
+                    : " radar-button"
+                }
                 onClick={() => setActiveTab("weakness")}
               >
-                 {t('team_builder.team_weaknesses')}
+                {t("team_builder.team_weaknesses")}
               </button>
               <div className="team-tooltip-container">
-              <HelpButton
-                content={
-                  activeTab === "coverage" ? (
-                    <div>
-                        <p>{t('team_builder.coverage_help')}</p>
-                        <strong>{t('team_builder.good_indicators')}:</strong>
+                <HelpButton
+                  content={
+                    activeTab === "coverage" ? (
+                      <div>
+                        <p>{t("team_builder.coverage_help")}</p>
+                        <strong>{t("team_builder.good_indicators")}:</strong>
                         <ul>
-                          <li>{t('team_builder.coverage_indicator1')}</li>
-                          <li>{t('team_builder.coverage_indicator2')}</li>
-                          <li>{t('team_builder.coverage_indicator3')}</li>
+                          <li>{t("team_builder.coverage_indicator1")}</li>
+                          <li>{t("team_builder.coverage_indicator2")}</li>
+                          <li>{t("team_builder.coverage_indicator3")}</li>
                         </ul>
                       </div>
-                  ) : (
-                    <div>
-                      <p>{t('team_builder.weakness_help')}</p>
-                        <strong>{t('team_builder.good_indicators')}:</strong>
+                    ) : (
+                      <div>
+                        <p>{t("team_builder.weakness_help")}</p>
+                        <strong>{t("team_builder.good_indicators")}:</strong>
                         <ul>
-                          <li>{t('team_builder.weakness_indicator1')}</li>
-                          <li>{t('team_builder.weakness_indicator2')}</li>
-                          <li>{t('team_builder.weakness_indicator3')}</li>
+                          <li>{t("team_builder.weakness_indicator1")}</li>
+                          <li>{t("team_builder.weakness_indicator2")}</li>
+                          <li>{t("team_builder.weakness_indicator3")}</li>
                         </ul>
-                    </div>
-                  )
-                }
-              />
-              <span className="team-tooltip">{t('team_builder.graph_info')}</span>
+                      </div>
+                    )
+                  }
+                />
+                <span className="team-tooltip">
+                  {t("team_builder.graph_info")}
+                </span>
               </div>
               <div className="team-tooltip-container">
-              <button
-                className="expand-button"
-                onClick={() =>
-                  setExpandedGraph(
-                    activeTab === "coverage" ? "coverage" : "weakness"
-                  )
-                }
-              >
-                <span>
-                  <FaExpandAlt />
+                <button
+                  className="expand-button"
+                  onClick={() =>
+                    setExpandedGraph(
+                      activeTab === "coverage" ? "coverage" : "weakness"
+                    )
+                  }
+                >
+                  <span>
+                    <FaExpandAlt />
+                  </span>
+                </button>
+                <span className="team-tooltip">
+                  {t("team_builder.zoom_in")}
                 </span>
-              </button>
-              <span className="team-tooltip">{t('team_builder.zoom_in')}</span>
               </div>
             </div>
 
@@ -830,44 +954,50 @@ const TeamBuilder = () => {
               {activeTab === "weakness" && (
                 <div className="weakness-">
                   <span style={{ color: "#ff6384" }}>
-                    {t('team_builder.high_vulnerability')}
+                    {t("team_builder.high_vulnerability")}
                   </span>
                   <span style={{ color: "#ff9f40" }}>
-                  {t('team_builder.moderate_weakness')}
+                    {t("team_builder.moderate_weakness")}
                   </span>
-                  <span style={{ color: "#4bc0c0" }}>{t('team_builder.resistant')}</span>
+                  <span style={{ color: "#4bc0c0" }}>
+                    {t("team_builder.resistant")}
+                  </span>
                 </div>
               )}
             </div>
           </div>
           <div className="analysis-graph type-balance">
             <div className="graph-header">
-              <h3>{t('team_builder.type_balance')}</h3>
+              <h3>{t("team_builder.type_balance")}</h3>
               <div className="team-tooltip-container">
-              <HelpButton
-                content={
-                  <div>
-                      <p>{t('team_builder.type_balance_help')}</p>
-                      <strong>{t('team_builder.good_indicators')}:</strong>
+                <HelpButton
+                  content={
+                    <div>
+                      <p>{t("team_builder.type_balance_help")}</p>
+                      <strong>{t("team_builder.good_indicators")}:</strong>
                       <ul>
-                        <li>{t('team_builder.balance_indicator1')}</li>
-                        <li>{t('team_builder.balance_indicator2')}</li>
-                        <li>{t('team_builder.balance_indicator3')}</li>
+                        <li>{t("team_builder.balance_indicator1")}</li>
+                        <li>{t("team_builder.balance_indicator2")}</li>
+                        <li>{t("team_builder.balance_indicator3")}</li>
                       </ul>
-                      <p>{t('team_builder.type_balance_tip')}</p>
+                      <p>{t("team_builder.type_balance_tip")}</p>
                     </div>
-                }
-              />
-              <span className="team-tooltip">{t('team_builder.graph_info')}</span>
+                  }
+                />
+                <span className="team-tooltip">
+                  {t("team_builder.graph_info")}
+                </span>
               </div>
               <div className="team-tooltip-container">
-              <button
-                className="expand-button"
-                onClick={() => setExpandedGraph("typeBalance")}
-              >
-                <FaExpandAlt />
-              </button>
-              <span className="team-tooltip">{t('team_builder.zoom_in')}</span>
+                <button
+                  className="expand-button"
+                  onClick={() => setExpandedGraph("typeBalance")}
+                >
+                  <FaExpandAlt />
+                </button>
+                <span className="team-tooltip">
+                  {t("team_builder.zoom_in")}
+                </span>
               </div>
             </div>
             <Pie
@@ -899,32 +1029,36 @@ const TeamBuilder = () => {
           </div>
           <div className="analysis-graph stat-distribution">
             <div className="graph-header">
-              <h3>{t('team_builder.stat_distribution')}</h3>
+              <h3>{t("team_builder.stat_distribution")}</h3>
               <div className="team-tooltip-container">
-              <HelpButton
-                content={
-                  <div>
-                  <p>{t('team_builder.stat_distribution_help')}</p>
-                  <strong>{t('team_builder.good_indicators')}:</strong>
-                  <ul>
-                    <li>{t('team_builder.stat_indicator1')}</li>
-                    <li>{t('team_builder.stat_indicator2')}</li>
-                    <li>{t('team_builder.stat_indicator3')}</li>
-                  </ul>
-                  <p>{t('team_builder.stat_distribution_tip')}</p>
-                </div>
-                }
-              />
-              <span className="team-tooltip">{t('team_builder.graph_info')}</span>
+                <HelpButton
+                  content={
+                    <div>
+                      <p>{t("team_builder.stat_distribution_help")}</p>
+                      <strong>{t("team_builder.good_indicators")}:</strong>
+                      <ul>
+                        <li>{t("team_builder.stat_indicator1")}</li>
+                        <li>{t("team_builder.stat_indicator2")}</li>
+                        <li>{t("team_builder.stat_indicator3")}</li>
+                      </ul>
+                      <p>{t("team_builder.stat_distribution_tip")}</p>
+                    </div>
+                  }
+                />
+                <span className="team-tooltip">
+                  {t("team_builder.graph_info")}
+                </span>
               </div>
               <div className="team-tooltip-container">
-              <button
-                className="expand-button"
-                onClick={() => setExpandedGraph("statDistribution")}
-              >
-                <FaExpandAlt />
-              </button>
-              <span className="team-tooltip">{t('team_builder.zoom_in')}</span>
+                <button
+                  className="expand-button"
+                  onClick={() => setExpandedGraph("statDistribution")}
+                >
+                  <FaExpandAlt />
+                </button>
+                <span className="team-tooltip">
+                  {t("team_builder.zoom_in")}
+                </span>
               </div>
             </div>
             <Bar
@@ -985,8 +1119,8 @@ const TeamBuilder = () => {
         </div>
       ) : (
         <div className="empty-analysis">
-          <h3>{t('team_builder.add_pokemon_title')}</h3>
-          <p>{t('team_builder.add_pokemon_message')}</p>
+          <h3>{t("team_builder.add_pokemon_title")}</h3>
+          <p>{t("team_builder.add_pokemon_message")}</p>
         </div>
       )}
       <GraphModal />
