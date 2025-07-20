@@ -16,6 +16,7 @@
   width: fit-content; 
   min-width: 350px; 
   overflow-y: auto; 
+  overflow-x: hidden;
   min-height: 100%;
 }
 
