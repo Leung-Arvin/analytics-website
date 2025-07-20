@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 
 const TypeBadge = ({ type }) => {
   const {t} = useTranslation();
-  // Type color mappings (official Pokémon colors)
+
   const typeColors = {
     normal: '#A8A878',
     fire: '#F08030',

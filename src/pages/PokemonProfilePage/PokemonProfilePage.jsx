@@ -21,7 +21,6 @@ import { fetchAbilityDescription, fetchPokemonSpeciesData } from '../../utils/po
 import Breadcrumbs from '../../components/Breadcrumbs/Breadcrumbs';
 import { useTranslation } from 'react-i18next';
 
-// Register ChartJS components
 ChartJS.register(
   RadialLinearScale,
   PointElement,

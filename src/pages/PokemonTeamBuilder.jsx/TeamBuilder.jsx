@@ -49,7 +49,6 @@ const TeamBuilder = () => {
     if (savedTeam.length > 0) {
       setTeam(savedTeam);
 
-      // Preload sprites for saved team
       savedTeam.forEach(async (pokemon) => {
         if (!sprites[pokemon.pokedex_number]) {
           try {
@@ -86,78 +85,86 @@ const TeamBuilder = () => {
       setSearchResults([]);
       return;
     }
-  
+
     const filterResults = async () => {
-      // First filter based on English names (immediate response)
-      const englishResults = pokemonData.filter((pokemon) => 
-        pokemon.name?.toLowerCase().includes(searchQuery.toLowerCase())
-      ).slice(0, 5);
-  
-      // Set initial results with English names
+      const englishResults = pokemonData
+        .filter((pokemon) =>
+          pokemon.name?.toLowerCase().includes(searchQuery.toLowerCase())
+        )
+        .slice(0, 5);
+
       setSearchResults(englishResults);
-  
-      // Then fetch and update with localized names
+
       const translatedResults = await Promise.all(
         englishResults.map(async (pokemon) => {
           try {
-            const speciesData = await fetchPokemonSpeciesData(pokemon.pokedex_number);
-            const localizedName = speciesData.names.find(
-              name => name.language.name === i18n.language
-            )?.name || pokemon.name;
-            
-            // Update localized names cache
-            setLocalizedNames(prev => ({
+            const speciesData = await fetchPokemonSpeciesData(
+              pokemon.pokedex_number
+            );
+            const localizedName =
+              speciesData.names.find(
+                (name) => name.language.name === i18n.language
+              )?.name || pokemon.name;
+
+            setLocalizedNames((prev) => ({
               ...prev,
               [pokemon.pokedex_number]: {
                 name: localizedName,
-                language: i18n.language
-              }
+                language: i18n.language,
+              },
             }));
-  
-            return pokemon; // Return original pokemon - the name will update via state
+
+            return pokemon;
           } catch (error) {
-            console.error(`Error updating name for Pokemon ${pokemon.pokedex_number}:`, error);
+            console.error(
+              `Error updating name for Pokemon ${pokemon.pokedex_number}:`,
+              error
+            );
             return pokemon;
           }
         })
       );
-  
-      // Update results with translations (though names will update via localizedNames state)
       setSearchResults(translatedResults);
     };
-  
+
     filterResults();
   }, [searchQuery, pokemonData, i18n.language]);
 
   useEffect(() => {
     const updateLocalizedNames = async () => {
       const newLocalizedNames = { ...localizedNames };
-      
+
       await Promise.all(
         team.map(async (pokemon) => {
           try {
-            const speciesData = await fetchPokemonSpeciesData(pokemon.pokedex_number);
-            const localizedName = speciesData.names.find(
-              name => name.language.name === i18n.language
-            )?.name || pokemon.name;
-            
+            const speciesData = await fetchPokemonSpeciesData(
+              pokemon.pokedex_number
+            );
+            const localizedName =
+              speciesData.names.find(
+                (name) => name.language.name === i18n.language
+              )?.name || pokemon.name;
+
             newLocalizedNames[pokemon.pokedex_number] = {
               name: localizedName,
-              language: i18n.language
+              language: i18n.language,
             };
           } catch (error) {
-            console.error(`Error updating name for Pokemon ${pokemon.pokedex_number}:`, error);
+            console.error(
+              `Error updating name for Pokemon ${pokemon.pokedex_number}:`,
+              error
+            );
             newLocalizedNames[pokemon.pokedex_number] = {
               name: pokemon.name,
-              language: i18n.language
+              language: i18n.language,
             };
           }
         })
       );
-  
+
       setLocalizedNames(newLocalizedNames);
     };
-  
+
     if (team.length > 0) {
       updateLocalizedNames();
     }
@@ -183,8 +190,6 @@ const TeamBuilder = () => {
       return;
 
     try {
-      // Check if sprite is already cached
-
       if (!sprites[pokemon.pokedex_number]) {
         const response = await fetch(
           `https://pokeapi.co/api/v2/pokemon/${pokemon.name.toLowerCase()}`
@@ -322,7 +327,6 @@ const TeamBuilder = () => {
             return count;
           }, 0);
         }),
-        // Map each type to its corresponding color
         backgroundColor: [
           ...new Set(team.flatMap((p) => [p.type1, p.type2].filter(Boolean))),
         ].map((type) => typeColors[type.toLowerCase()]),
@@ -497,7 +501,6 @@ const TeamBuilder = () => {
     );
   };
 
-  // Helper functions for chart options
   const getRadarOptions = (title) => ({
     scales: {
       r: {
@@ -638,22 +641,23 @@ const TeamBuilder = () => {
           const sprite =
             data.sprites.other["official-artwork"].front_default ||
             `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${pokemon.pokedex_number}.png`;
-          
-            const speciesData = await fetchPokemonSpeciesData(
-              pokemon.pokedex_number
-            );
-            const localizedName =
-              speciesData.names.find((name) => name.language.name === i18n.language)
-                ?.name || pokemon.name;
-    
-            setLocalizedNames((prev) => ({
-              ...prev,
-              [pokemon.pokedex_number]: {
-                name: localizedName,
-                language: i18n.language,
-              },
-            }));
-            
+
+          const speciesData = await fetchPokemonSpeciesData(
+            pokemon.pokedex_number
+          );
+          const localizedName =
+            speciesData.names.find(
+              (name) => name.language.name === i18n.language
+            )?.name || pokemon.name;
+
+          setLocalizedNames((prev) => ({
+            ...prev,
+            [pokemon.pokedex_number]: {
+              name: localizedName,
+              language: i18n.language,
+            },
+          }));
+
           setSprites((prev) => ({
             ...prev,
             [pokemon.pokedex_number]: sprite,
@@ -735,11 +739,16 @@ const TeamBuilder = () => {
                     >
                       <img
                         src={sprites[team[i].pokedex_number]}
-                        alt={localizedNames[team[i].pokedex_number]?.name || team[i].name}
+                        alt={
+                          localizedNames[team[i].pokedex_number]?.name ||
+                          team[i].name
+                        }
                       />
                       <div className="pokemon-info">
                         <span>
-                        #{team[i].pokedex_number} {localizedNames[team[i].pokedex_number]?.name || team[i].name}
+                          #{team[i].pokedex_number}{" "}
+                          {localizedNames[team[i].pokedex_number]?.name ||
+                            team[i].name}
                         </span>
                       </div>
                       <div className="team-actions">

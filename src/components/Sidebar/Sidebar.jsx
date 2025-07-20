@@ -30,7 +30,6 @@ const Sidebar = () => {
 
   return (
     <div className={`sidebar ${isCollapsed ? 'collapsed' : ''}`}>
-      {/* Collapse Toggle Button */}
       <button 
         className="sidebar-toggle"
         onClick={() => setIsCollapsed(!isCollapsed)}

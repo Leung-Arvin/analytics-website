@@ -42,7 +42,6 @@ const PokemonGridPage = () => {
       await Promise.all(
         currentItems.map(async (pokemon) => {
           try {
-            // Fetch sprite if not already loaded
             if (!newSprites[pokemon.pokedex_number]) {
               const response = await fetch(
                 `https://pokeapi.co/api/v2/pokemon/${getApiName(pokemon.name)}`
@@ -53,7 +52,6 @@ const PokemonGridPage = () => {
                 `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${pokemon.pokedex_number}.png`;
             }
 
-            // Fetch localized name if not already loaded or language changed
             if (!newLocalizedNames[pokemon.pokedex_number] || 
                 newLocalizedNames[pokemon.pokedex_number].language !== i18n.language) {
               const speciesData = await fetchPokemonSpeciesData(pokemon.pokedex_number);
@@ -68,7 +66,6 @@ const PokemonGridPage = () => {
             }
           } catch (error) {
             console.error(`Error loading data for Pokemon ${pokemon.pokedex_number}:`, error);
-            // Fallbacks
             if (!newSprites[pokemon.pokedex_number]) {
               newSprites[pokemon.pokedex_number] =
                 `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${pokemon.pokedex_number}.png`;
