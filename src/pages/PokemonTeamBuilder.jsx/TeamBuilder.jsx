@@ -361,7 +361,7 @@ const TeamBuilder = () => {
             ? "rgba(255, 99, 132, 1)"
             : value > 1
             ? "rgba(255, 159, 64, 0.8)"
-            : "rgb(75, 192, 128, 0.5)";
+            : "rgb(100, 192, 128, 0.5)";
         },
         borderColor: "#fff",
         borderWidth: "1",
@@ -974,7 +974,7 @@ const TeamBuilder = () => {
                   <span style={{ color: "#ff9f40" }}>
                     {t("team_builder.moderate_weakness")}
                   </span>
-                  <span style={{ color: "#4bc0c0" }}>
+                  <span style={{ color: "rgb(100, 192, 128, 0.5)" }}>
                     {t("team_builder.resistant")}
                   </span>
                 </div>

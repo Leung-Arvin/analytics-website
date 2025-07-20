@@ -210,7 +210,7 @@
 
 .radar-legend span:nth-child(1)::before { background: #ff6384; }
 .radar-legend span:nth-child(2)::before { background: #ff9f40; }
-.radar-legend span:nth-child(3)::before { background: #4bc0c0; }
+.radar-legend span:nth-child(3)::before { background: rgb(100, 192, 128, 0.5); }
 
 .radar-graph {
   grid-area: 1 / 1 / 2 / 2;
