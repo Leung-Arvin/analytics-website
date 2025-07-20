@@ -28,6 +28,13 @@
   min-height: 100%;
 }
 
+/* When team is empty, switch to flex */
+.team-slots:has(.empty-team-prompt) {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
 .team-actions {
   display: flex;
   cursor: pointer;
